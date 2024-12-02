@@ -53,8 +53,7 @@ mod day1_tests {
 
     #[test]
     pub fn test_with_actual_data() {
-        // redacted
-        assert_eq!(solve_part_a("./inputs/day1.txt"), 0);
-        assert_eq!(solve_part_b("./inputs/day1.txt"), 0);
+        assert_eq!(solve_part_a("./inputs/day1.txt"), 1941353);
+        assert_eq!(solve_part_b("./inputs/day1.txt"), 22539317);
     }
 }
