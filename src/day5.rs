@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
-pub fn solve_part_a_and_b(input_path: &str) -> usize {
+pub fn solve_part_a_and_b(input_path: &str) -> (usize, usize) {
     let content = fs::read_to_string(&Path::new(input_path)).unwrap();
     let parsed_content = content.split("\r\n\r\n").collect::<Vec<&str>>();
     let (rules, updates) = (parsed_content[0], parsed_content[1]);
@@ -26,8 +26,9 @@ pub fn solve_part_a_and_b(input_path: &str) -> usize {
             },
         );
 
-    let mut part_a = 0 as usize;
-    let unordered_updates = updates
+    let mut part_a = 0usize;
+    let mut part_b = 0usize;
+    updates
         .lines()
         .map(|line| {
             line.split(",")
@@ -40,13 +41,16 @@ pub fn solve_part_a_and_b(input_path: &str) -> usize {
             {
                 part_a += x[x.len() / 2];
             } else {
+                let not_good_report = x
+                    .iter()
+                    .sorted_by(|a, b| {
+                        (rules_lookup.contains_key(a) && rules_lookup[a].contains(b)).cmp(&true)
+                    })
+                    .collect_vec();
+                part_b += not_good_report[not_good_report.len() / 2];
             }
         });
-    part_a
-}
-
-pub fn solve_part_b(input_path: &str) -> usize {
-    0
+    (part_a, part_b)
 }
 
 #[cfg(test)]
@@ -54,13 +58,15 @@ mod day5_tests {
     use super::*;
     #[test]
     pub fn test_with_sample_data() {
-        assert_eq!(solve_part_a_and_b("./inputs/day5_sample.txt"), 143);
-        // assert_eq!(solve_part_b("./inputs/day5b_sample.txt"), 0);
+        let solution = solve_part_a_and_b("./inputs/day5_sample.txt");
+        assert_eq!(solution.0, 143);
+        assert_eq!(solution.1, 123);
     }
 
     #[test]
     pub fn test_with_actual_data() {
-        assert_eq!(solve_part_a_and_b("./inputs/day5.txt"), 5091);
-        assert_eq!(solve_part_b("./inputs/day5.txt"), 0);
+        let solution = solve_part_a_and_b("./inputs/day5.txt");
+        assert_eq!(solution.0, 5091);
+        assert_eq!(solution.1, 4681);
     }
 }
