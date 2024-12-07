@@ -35,7 +35,7 @@ pub fn solve_part_a_and_b(input_path: &str) -> (usize, usize) {
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect_vec()
         })
-        .for_each(|mut x| {
+        .for_each(|x| {
             if x.iter()
                 .is_sorted_by(|a, b| rules_lookup.contains_key(a) && rules_lookup[a].contains(b))
             {
