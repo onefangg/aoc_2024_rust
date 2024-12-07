@@ -38,7 +38,9 @@ struct Guard {
     row_idx: usize,
     col_idx: usize,
     direction: GuardDirection,
+    is_loopy: bool,
     visited: HashSet<(usize, usize)>,
+    visited_with_direction: HashSet<(usize, usize, GuardDirection)>,
 }
 
 impl Guard {
@@ -47,6 +49,7 @@ impl Guard {
         grid: &Vec<Vec<char>>,
         oob_col: usize,
         oob_row: usize,
+        should_check_for_loop: bool,
     ) -> bool {
         let mut is_turn = false;
         match &self.direction {
@@ -93,42 +96,87 @@ impl Guard {
         }
         if is_turn {
             self.direction = self.direction.clone().turn();
-        } else {
-            self.visited.insert((self.row_idx, self.col_idx));
         }
+        self.visited.insert((self.row_idx, self.col_idx));
+        if should_check_for_loop
+            && self.visited_with_direction.contains(&(
+                self.row_idx,
+                self.col_idx,
+                self.direction.clone(),
+            ))
+        {
+            self.is_loopy = true;
+            return false;
+        }
+        self.visited_with_direction
+            .insert((self.row_idx, self.col_idx, self.direction.clone()));
+
         true
     }
 }
 
-pub fn solve_part_a(input_path: &str) -> usize {
+pub fn solve_part_a_and_b(input_path: &str) -> (usize, usize) {
     let content = fs::read_to_string(&Path::new(input_path)).unwrap();
     let grid = content
         .lines()
         .map(|line| line.chars().collect_vec())
         .collect_vec();
     let (width, height) = (grid[0].len(), grid.len());
-    let (curr_row, curr_col) = find_coord(&grid, '^');
+    let (starting_row, starting_col) = find_coord(&grid, '^');
     let mut guard = Guard {
-        row_idx: curr_row,
-        col_idx: curr_col,
+        row_idx: starting_row,
+        col_idx: starting_col,
+        is_loopy: false,
         direction: GuardDirection::Up,
-        visited: HashSet::from([(curr_row, curr_col)]),
+        visited: HashSet::from([(starting_row, starting_col)]),
+        visited_with_direction: HashSet::from([(starting_row, starting_col, GuardDirection::Up)]),
     };
     loop {
-        // println!(
-        //     "guard at row {:?}, guard at col {:?}, facing direction: {:?}",
-        //     guard.row_idx, guard.col_idx, guard.direction
-        // );
-        match guard.move_one_space(&grid, width, height) {
+        match guard.move_one_space(&grid, width, height, false) {
             true => continue,
             false => break,
         }
     }
-    guard.visited.len()
-}
 
-pub fn solve_part_b(input_path: &str) -> usize {
-    0
+    let loopy = guard
+        .visited
+        .iter()
+        .filter(|(r, c)| !(r == &starting_row && c == &starting_col))
+        .filter(|(visited_row, visited_col)| {
+            let edited_grid = (0..height)
+                .map(|row| {
+                    (0..width)
+                        .map(|col| {
+                            if *visited_row == row && *visited_col == col {
+                                return '#';
+                            }
+                            return grid[row][col];
+                        })
+                        .collect_vec()
+                })
+                .collect_vec();
+            let mut simulate_new_guard = Guard {
+                row_idx: starting_row,
+                col_idx: starting_col,
+                is_loopy: false,
+                direction: GuardDirection::Up,
+                visited: HashSet::from([(starting_row, starting_col)]),
+                visited_with_direction: HashSet::from([(
+                    starting_row,
+                    starting_col,
+                    GuardDirection::Up,
+                )]),
+            };
+            loop {
+                match simulate_new_guard.move_one_space(&edited_grid, width, height, true) {
+                    true => continue,
+                    false => break,
+                }
+            }
+            simulate_new_guard.is_loopy
+        })
+        .count();
+    (guard.visited.len(), loopy)
 }
 
 #[cfg(test)]
@@ -137,13 +185,16 @@ mod day6_tests {
 
     #[test]
     pub fn test_with_sample_data() {
-        assert_eq!(solve_part_a("./inputs/day6_sample.txt"), 41);
-        assert_eq!(solve_part_b("./inputs/day6_sample.txt"), 0);
+        let solution = solve_part_a_and_b("./inputs/day6_sample.txt");
+        assert_eq!(solution.0, 41);
+        assert_eq!(solution.1, 6);
     }
 
     #[test]
     pub fn test_with_actual_data() {
-        assert_eq!(solve_part_a("./inputs/day6.txt"), 5331);
-        assert_eq!(solve_part_b("./inputs/day6.txt"), 0);
+        let solution = solve_part_a_and_b("./inputs/day6.txt");
+        assert_eq!(solution.0, 5331);
+        // takes 55 second bloody inefficient
+        assert_eq!(solution.1, 1812);
     }
 }
