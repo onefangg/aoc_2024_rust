@@ -26,24 +26,35 @@ pub fn solve_part_a_and_b(input_str: &str) -> (usize, usize) {
         },
     );
     let mut antinodes = HashSet::<(isize, isize)>::new();
+    let mut antinodes_p2 = HashSet::<(isize, isize)>::new();
 
-    antennas.iter().for_each(|(r, c)| {
-        c.iter().tuple_combinations().for_each(|(c1, c2)| {
+    antennas.iter().for_each(|(_, values)| {
+        values.iter().tuple_combinations().for_each(|(c1, c2)| {
             let row_offset = c1.0 - c2.0;
             let col_offset = c1.1 - c2.1;
             antinodes.insert((c1.0 + row_offset, c1.1 + col_offset));
             antinodes.insert((c2.0 + -row_offset, c2.1 + -col_offset));
+
+            let freq = (height / row_offset).abs();
+            (2..=freq).for_each(|f| {
+                antinodes_p2.insert((c1.0 + f * row_offset, c1.1 + f * col_offset));
+                antinodes_p2.insert((c2.0 + f * -row_offset, c2.1 + f * -col_offset));
+            });
+            antinodes_p2.insert((c1.0, c1.1));
+            antinodes_p2.insert((c2.0, c2.1));
         })
     });
+
     let part_one = antinodes
         .iter()
         .filter(|(r, c)| (*r >= 0 && *r < height) && (*c >= 0 && *c < width))
         .count();
-    (part_one, 0)
-}
-
-pub fn solve_part_b(input_str: &str) -> usize {
-    0
+    antinodes_p2.extend(antinodes);
+    let part_two = antinodes_p2
+        .iter()
+        .filter(|(r, c)| (*r >= 0 && *r < height) && (*c >= 0 && *c < width))
+        .count();
+    (part_one, part_two)
 }
 
 #[cfg(test)]
