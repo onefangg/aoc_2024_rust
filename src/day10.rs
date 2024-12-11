@@ -1,42 +1,64 @@
+use crate::aoc_utils::Matrix;
+use itertools::Itertools;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
-use itertools::Itertools;
 
-pub fn solve(input_str: &str) -> usize {
+pub fn solve(input_str: &str) -> (usize, usize) {
     let content = fs::read_to_string(Path::new(input_str)).unwrap();
-    let grid = content.lines()
-        .map(|l| l.chars().map(|x| x.to_digit(10).unwrap()).collect_vec())
+
+    let width = content.find('\n').unwrap();
+    let grid = content
+        .lines()
+        .flat_map(|l| {
+            l.chars()
+                .map(|x| x.to_digit(10).unwrap() as usize)
+                .collect_vec()
+        })
         .collect_vec();
-    let (width, height) = (grid[0].len(), grid.len());
-    let mut trailheads = Vec::<(usize, usize)>::new();
-    let _ = (0..height).map(|r| (0..width).for_each(|c|
-        if grid[r][c] == 0 {
-            trailheads.push((r, c));
+    let matrix = Matrix::new(grid, width);
+    let trail_heads_indices = matrix.get_indicies_of_ele(0);
+    let mut visited = HashMap::<usize, HashSet<usize>>::new();
+
+    let mut res = 0_usize;
+    for trail_head_idx in trail_heads_indices {
+        let mut neighbours = Vec::<usize>::new();
+        neighbours.push(trail_head_idx);
+
+        while !neighbours.is_empty() {
+            let at_idx = neighbours.pop().unwrap();
+            let at_ele = matrix.get_ele_with_idx(at_idx);
+            if at_ele == 9 {
+                visited
+                    .entry(trail_head_idx)
+                    .and_modify(|e| {
+                        (*e).insert(at_idx);
+                    })
+                    .or_insert(HashSet::from([at_idx]));
+                res += 1;
+            }
+
+            let (norm_row, norm_col) = matrix.derive_row_col(at_idx);
+            let adjacents = matrix.get_udlr_neighbours_2d_vec(norm_row, norm_col);
+            let next_door_indices = adjacents
+                .into_iter()
+                .filter(|(ele, idx)| {
+                    let diff = ele.checked_sub(at_ele);
+                    if let Some(diff) = diff {
+                        if diff == 1 {
+                            return true;
+                        }
+                        return false;
+                    }
+                    false
+                })
+                .map(|(_, i)| i)
+                .collect_vec();
+            neighbours.extend(next_door_indices);
         }
-    ));
-
-    let mut score = 0;
-    for (trail_row, trail_col) in trailheads {
-        let n = get_valid_neighbours(&grid, trail_col, trail_col);
-        dbg!(n);
     }
-    0
+    (visited.iter().map(|x| x.1.len()).sum(), res)
 }
-
-pub fn get_valid_neighbours(grid: &Vec<Vec<(u32)>>, curr_row: usize, curr_col: usize) -> Vec<(usize, usize)> {
-    let curr_element = grid[curr_row][curr_col];
-    let adjacent = vec![
-        grid.get(curr_row-1).ok_or(10).into_iter().get(curr_col).ok() as usize,
-        grid.get(curr_row+1).ok_or(10).into_iter().get(curr_col).ok() as usize,
-        grid.get(curr_row).ok_or(10).into_iter().get(curr_col-1).ok() as usize,
-        grid.get(curr_row).ok_or(10).into_iter().get(curr_col+1).ok() as usize,
-    ]
-        .enumerate()
-        .map(|(_, x)| { x- curr_element })
-        .filter(|_,e| e.abs() == 1).map(|(i,x)| i).collect_vec::<usize>();
-    adjacent
-}
-
 
 #[cfg(test)]
 mod day10_tests {
@@ -44,10 +66,14 @@ mod day10_tests {
 
     #[test]
     pub fn solve_with_sample_input() {
-        assert_eq!(solve("./inputs/day10_sample.txt"), 36);
+        let (sln1, sln2) = solve("./inputs/day10_sample.txt");
+        assert_eq!(sln1, 36);
+        assert_eq!(sln2, 81);
     }
     #[test]
     pub fn solve_with_actual_input() {
-        assert_eq!(solve("./inputs/day10.txt"), 0);
+        let (sln1, sln2) = solve("./inputs/day10.txt");
+        assert_eq!(sln1, 841);
+        assert_eq!(sln2, 1875);
     }
 }
