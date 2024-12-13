@@ -91,10 +91,10 @@ mod utils_test {
         let grid_data = vec![2, 1, 3, 4];
         let mat = Matrix::new(grid_data, 2);
 
-        // assert_eq!(mat.get_ele(0, 0).unwrap(), &2);
-        // assert_eq!(mat.get_ele(0, 1).unwrap(), &1);
-        // assert_eq!(mat.get_ele(1, 0).unwrap(), &3);
-        // assert_eq!(mat.get_ele(1, 1).unwrap(), &4);
+        assert_eq!(mat.get_ele(0, 0).unwrap(), &2);
+        assert_eq!(mat.get_ele(0, 1).unwrap(), &1);
+        assert_eq!(mat.get_ele(1, 0).unwrap(), &3);
+        assert_eq!(mat.get_ele(1, 1).unwrap(), &4);
     }
 
     #[test]

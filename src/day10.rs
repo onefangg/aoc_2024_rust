@@ -42,7 +42,7 @@ pub fn solve(input_str: &str) -> (usize, usize) {
             let adjacents = matrix.get_udlr_neighbours_2d_vec(norm_row, norm_col);
             let next_door_indices = adjacents
                 .into_iter()
-                .filter(|(ele, idx)| {
+                .filter(|(ele, _)| {
                     let diff = ele.checked_sub(at_ele);
                     if let Some(diff) = diff {
                         if diff == 1 {
