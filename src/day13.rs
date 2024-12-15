@@ -10,7 +10,7 @@ struct EquationSolver {
 impl EquationSolver {
     fn solve_for_n(&self) -> i64 {
         let inverse_factor: f64 =
-            (1f64 / (self.matrix[0] * self.matrix[3] - self.matrix[1] * self.matrix[2]) as f64);
+            1f64 / (self.matrix[0] * self.matrix[3] - self.matrix[1] * self.matrix[2]) as f64;
 
         let inverse_matrix = [
             self.matrix[3] as f64,
